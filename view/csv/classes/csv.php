@@ -375,23 +375,39 @@ public function process_export($range = self::EXPORT_PAGE) {
         }
 
         $csvcontent = array();
-        $csvcontent[] = $csvheader;
 
-        // Get the field definitions
-        // array(array(pattern => value,...)...).
-        foreach ($entryvalues as $entryid => $patternvalues) {
-            $row = array();
-            foreach ($columnpatterns as $pattern) {
-                if (isset($patternvalues[$pattern])) {
-                    $row[] = $patternvalues[$pattern];
-                } else {
-                    $row[] = $pattern;
-                }
+    // Spalten, die entfernt werden sollen
+    $columns_to_remove = ['EAU:name', 'EAU:picture', 'EAC:edit', 'EAC:delete'];
+
+    // Entferne die Spalten aus $columnpatterns
+    $columnpatterns = array_filter($columnpatterns, function($pattern) use ($columns_to_remove) {
+        $header = trim($pattern, '[#]');
+        return !in_array($header, $columns_to_remove);
+    });
+
+    // Erstelle den CSV-Header basierend auf den gefilterten $columnpatterns
+    $csvheader = array();
+    foreach ($columnpatterns as $pattern) {
+        $header = trim($pattern, '[#]');
+        $csvheader[] = $header;
+    }
+
+    $csvcontent = array();
+    $csvcontent[] = $csvheader;
+
+    // Erstelle die CSV-Daten basierend auf den gefilterten $columnpatterns
+    foreach ($entryvalues as $entryid => $patternvalues) {
+        $row = array();
+        foreach ($columnpatterns as $pattern) {
+            if (isset($patternvalues[$pattern])) {
+                $row[] = $patternvalues[$pattern];
+            } else {
+                $row[] = $pattern;
             }
-            $csvcontent[] = $row;
         }
-
-        return $csvcontent;
+        $csvcontent[] = $row;
+    }
+    return $csvcontent;
     }
 
     /**
